@@ -3,11 +3,8 @@
 {{- $servicePort := .Values.artifactory.externalPort -}}
 {{- $artifactoryServicePort := .Values.artifactory.externalArtifactoryPort -}}
 {{- $ingressName := default ( include "artifactory.fullname" . ) .Values.ingress.name -}}
-{{- if semverCompare ">=v1.14.0-0" .Capabilities.KubeVersion.GitVersion }}
-apiVersion: networking.k8s.io/v1beta1
-{{- else }}
-apiVersion: extensions/v1beta1
-{{- end }}
+{{- $apiVersion := include "ingress.apiVersion" . -}}
+apiVersion: {{ $apiVersion }}
 kind: Ingress
 metadata:
   name: {{ $ingressName }}
@@ -37,12 +34,34 @@ spec:
       paths:
         - path: {{ $.Values.ingress.routerPath }}
           backend:
+            {{- if or (eq $apiVersion "extensions/v1beta1") (eq $apiVersion "networking.k8s.io/v1beta1") -}}
             serviceName: {{ $serviceName }}
             servicePort: {{ $servicePort }}
+            {{- else -}}
+            service:
+              name: {{ $serviceName }}
+              port:
+                {{- if typeIs "string" $servicePort }}
+                name: {{ $servicePort }}
+                {{- else if or (typeIs "int" $servicePort) (typeIs "float64" $servicePort) }}
+                number: {{ $servicePort | int }}
+                {{- end }}
+            {{- end -}}
         - path: {{ $.Values.ingress.artifactoryPath }}
           backend:
+            {{- if or (eq $apiVersion "extensions/v1beta1") (eq $apiVersion "networking.k8s.io/v1beta1") -}}
             serviceName: {{ $serviceName }}
             servicePort: {{ $artifactoryServicePort }}
+            {{- else -}}
+            service:
+              name: {{ $serviceName }}
+              port:
+                {{- if typeIs "string" $artifactoryServicePort }}
+                name: {{ $artifactoryServicePort }}
+                {{- else if or (typeIs "int" $artifactoryServicePort) (typeIs "float64" $artifactoryServicePort) }}
+                number: {{ $artifactoryServicePort | int }}
+                {{- end }}
+            {{- end -}}
   {{- end -}}
 {{- end -}}
   {{- with .Values.ingress.additionalRules }}
@@ -56,11 +75,7 @@ spec:
 {{- if .Values.artifactory.replicator.enabled }}
 ---
 {{- $replicatorIngressName := default ( include "artifactory.replicator.fullname" . ) .Values.artifactory.replicator.ingress.name -}}
-  {{- if semverCompare ">=v1.14.0-0" .Capabilities.KubeVersion.GitVersion }}
-apiVersion: networking.k8s.io/v1beta1
-  {{- else }}
-apiVersion: extensions/v1beta1
-  {{- end }}
+apiVersion: {{ $apiVersion }}
 kind: Ingress
 metadata:
   name: {{ $replicatorIngressName }}
@@ -87,12 +102,34 @@ spec:
       paths:
         - path: /replicator/
           backend:
+            {{- if or (eq $apiVersion "extensions/v1beta1") (eq $apiVersion "networking.k8s.io/v1beta1") -}}
             serviceName: {{ $serviceName }}
             servicePort: {{ $servicePort }}
+            {{- else -}}
+            service:
+              name: {{ $serviceName }}
+              port:
+                {{- if typeIs "string" $servicePort }}
+                name: {{ $servicePort }}
+                {{- else if or (typeIs "int" $servicePort) (typeIs "float64" $servicePort) }}
+                number: {{ $servicePort | int }}
+                {{- end }}
+            {{- end -}}
         - path: /artifactory/api/replication/replicate/file/streaming
           backend:
+            {{- if or (eq $apiVersion "extensions/v1beta1") (eq $apiVersion "networking.k8s.io/v1beta1") -}}
             serviceName: {{ $serviceName }}
             servicePort: {{ $servicePort }}
+            {{- else -}}
+            service:
+              name: {{ $serviceName }}
+              port:
+                {{- if typeIs "string" $servicePort }}
+                name: {{ $servicePort }}
+                {{- else if or (typeIs "int" $servicePort) (typeIs "float64" $servicePort) }}
+                number: {{ $servicePort | int }}
+                {{- end }}
+            {{- end -}}
   {{- end -}}
 {{- end -}}
   {{- if .Values.artifactory.replicator.ingress.tls }}
@@ -103,11 +140,7 @@ spec:
 {{- if and .Values.artifactory.replicator.enabled .Values.artifactory.replicator.trackerIngress.enabled }}
 ---
 {{- $replicatorTrackerIngressName := default ( include "artifactory.replicator.tracker.fullname" . ) .Values.artifactory.replicator.trackerIngress.name -}}
-  {{- if semverCompare ">=v1.14.0-0" .Capabilities.KubeVersion.GitVersion }}
-apiVersion: networking.k8s.io/v1beta1
-  {{- else }}
-apiVersion: extensions/v1beta1
-  {{- end }}
+apiVersion: {{ $apiVersion }}
 kind: Ingress
 metadata:
   name: {{ $replicatorTrackerIngressName }}
@@ -134,8 +167,19 @@ spec:
       paths:
         - path: /
           backend:
+            {{- if or (eq $apiVersion "extensions/v1beta1") (eq $apiVersion "networking.k8s.io/v1beta1") -}}
             serviceName: {{ $serviceName }}
             servicePort: {{ $servicePort }}
+            {{- else -}}
+            service:
+              name: {{ $serviceName }}
+              port:
+                {{- if typeIs "string" $servicePort }}
+                name: {{ $servicePort }}
+                {{- else if or (typeIs "int" $servicePort) (typeIs "float64" $servicePort) }}
+                number: {{ $servicePort | int }}
+                {{- end }}
+            {{- end -}}
   {{- end -}}
 {{- end -}}
   {{- if .Values.artifactory.replicator.trackerIngress.tls }}

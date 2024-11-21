@@ -267,3 +267,13 @@ mkdir -p {{ .Values.artifactory.persistence.mountPath }}/etc/security/keys/trust
 find /tmp/certs -type f -not -name "*.key" -exec cp -v {} {{ .Values.artifactory.persistence.mountPath }}/etc/security/keys/trusted \;;
 find {{ .Values.artifactory.persistence.mountPath }}/etc/security/keys/trusted/ -type f -name "tls.crt" -exec mv -v {} {{ .Values.artifactory.persistence.mountPath }}/etc/security/keys/trusted/ca.crt \;;
 {{- end -}}
+
+{{- define "ingress.apiVersion" -}}
+{{- if semverCompare "<1.14-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- print "extensions/v1beta1" -}}
+{{- else if semverCompare "<1.19-0" .Capabilities.KubeVersion.GitVersion -}}
+{{- print "networking.k8s.io/v1beta1" -}}
+{{- else -}}
+{{- print "networking.k8s.io/v1" -}}
+{{- end -}}
+{{- end -}}
